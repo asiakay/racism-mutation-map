@@ -14,7 +14,7 @@
   a{color:var(--accent);text-decoration:none}
   a:hover{text-decoration:underline}
   .wrap{max-width:1200px;margin:auto;padding:16px}
-  header{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:10px}
+  header{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap}
   .brand{display:flex;gap:12px;align-items:center}
   .dot{width:14px;height:14px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 6px rgba(0,194,184,.12)}
   h1{font-size:clamp(20px,3.2vw,30px);margin:0}
@@ -24,7 +24,9 @@
   .filters{display:flex;flex-wrap:wrap;gap:8px}
   .chip{cursor:pointer;background:var(--chip);border:1px solid var(--line);padding:6px 10px;border-radius:999px;font-size:13px}
   .chip.active{outline:2px solid var(--accent)}
-  .legend{display:flex;gap:12px;align-items:center;color:var(--muted);font-size:12px}
+  .legend{display:flex;gap:12px;align-items:center;color:var(--muted);font-size:12px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+  .legend::-webkit-scrollbar{height:6px}
+  .legend::-webkit-scrollbar-thumb{background:rgba(158,177,214,.3);border-radius:999px}
   .legend .box{width:10px;height:10px;border-radius:2px}
   .canvas{background:radial-gradient(1200px 800px at 50% 0%, #0d1526 0, #0b0f16 40%, #0b0f16 100%);
           border:1px solid var(--line);border-radius:14px;overflow:hidden;position:relative}
@@ -50,12 +52,33 @@
   .btn:hover{border-color:#355089}
   .btn.hot{background:linear-gradient(135deg, var(--hot), #ff6b8f);border:none;color:#0b0b0b}
   .search{display:flex;gap:8px;align-items:center}
-  .search input{background:#0d1526;border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:8px 10px;min-width:190px}
+  .search input{background:#0d1526;border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:8px 10px;min-width:190px;width:100%}
+  .search button{flex-shrink:0}
   .footer-note{margin:10px 0 0;color:var(--muted);font-size:12px}
   @media (max-width:800px){
     .controls{flex-direction:column;align-items:stretch}
     .search{width:100%}
     .search input{flex:1}
+  }
+
+  @media (max-width:600px){
+    body{font-size:15px}
+    .wrap{padding:18px 14px}
+    header{flex-direction:column;align-items:flex-start;gap:16px;margin-bottom:18px}
+    .brand{width:100%;gap:10px}
+    .sub{font-size:13px}
+    .legend{width:100%;gap:10px;font-size:11px}
+    .legend .box{width:8px;height:8px}
+    .controls{margin:0 0 20px}
+    .filters{gap:6px}
+    .chip{padding:6px 12px;font-size:12px}
+    .search{flex-direction:column;align-items:stretch;gap:6px}
+    .search input{min-width:unset;width:100%}
+    .search button{width:100%}
+    .canvas{margin:0 -6px;border-radius:12px}
+    .drawer{width:min(480px,100vw)}
+    .drawer header{flex-direction:column;align-items:flex-start;gap:12px}
+    .drawer header .btn{width:100%;display:flex;justify-content:center}
   }
 </style>
 </head>
