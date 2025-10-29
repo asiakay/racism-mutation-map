@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Mutation Map of Racism — Interactive</title>
+<style>
+  :root{
+    --bg:#0b0f16; --panel:#101725; --ink:#ecf2ff; --muted:#9eb1d6; --accent:#00c2b8; --hot:#ff2e63; --line:#1a2742;
+    --badge:#14203a; --chip:#0f1a2e; --ok:#27c498; --warn:#ffb02e;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:1200px;margin:auto;padding:16px}
+  header{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .brand{display:flex;gap:12px;align-items:center}
+  .dot{width:14px;height:14px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 6px rgba(0,194,184,.12)}
+  h1{font-size:clamp(20px,3.2vw,30px);margin:0}
+  .sub{color:var(--muted);font-size:14px}
+  .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0 16px}
+  .controls > *{background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:8px 10px;font-weight:600}
+  .filters{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{cursor:pointer;background:var(--chip);border:1px solid var(--line);padding:6px 10px;border-radius:999px;font-size:13px}
+  .chip.active{outline:2px solid var(--accent)}
+  .legend{display:flex;gap:12px;align-items:center;color:var(--muted);font-size:12px}
+  .legend .box{width:10px;height:10px;border-radius:2px}
+  .canvas{background:radial-gradient(1200px 800px at 50% 0%, #0d1526 0, #0b0f16 40%, #0b0f16 100%);
+          border:1px solid var(--line);border-radius:14px;overflow:hidden;position:relative}
+  /* Tooltip */
+  .tip{position:absolute;pointer-events:none;background:#0e1627;border:1px solid #2b3b61;padding:10px 12px;border-radius:10px;
+       box-shadow:0 12px 30px rgba(0,0,0,.35);min-width:220px;max-width:280px;opacity:0;transition:opacity .12s}
+  .tip h3{margin:0 0 6px;font-size:16px}
+  .tip p{margin:0;font-size:13px;color:var(--muted)}
+  .tip .tag{display:inline-block;margin-top:8px;padding:4px 8px;border:1px solid #2b3b61;border-radius:999px;font-size:11px;color:#a7c0ff}
+  /* Right drawer for receipts */
+  .drawer{position:fixed;top:0;right:0;width:min(420px,92vw);height:100dvh;background:var(--panel);border-left:1px solid var(--line);
+          transform:translateX(100%);transition:.28s ease;z-index:5;display:flex;flex-direction:column}
+  .drawer.open{transform:translateX(0)}
+  .drawer header{padding:14px 14px;border-bottom:1px solid var(--line)}
+  .drawer .body{padding:16px;overflow:auto}
+  .kv{display:grid;gap:10px}
+  .kv .h{color:#a7c0ff;font-weight:700}
+  .kv .v{color:#d8e3ff}
+  .badge{display:inline-flex;gap:8px;align-items:center;background:var(--badge);border:1px solid var(--line);padding:6px 10px;border-radius:8px;font-size:12px}
+  .soft{color:var(--muted)}
+  button{cursor:pointer}
+  .btn{background:var(--panel);border:1px solid var(--line);padding:8px 10px;border-radius:10px;color:var(--ink);font-weight:700}
+  .btn:hover{border-color:#355089}
+  .btn.hot{background:linear-gradient(135deg, var(--hot), #ff6b8f);border:none;color:#0b0b0b}
+  .search{display:flex;gap:8px;align-items:center}
+  .search input{background:#0d1526;border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:8px 10px;min-width:190px}
+  .footer-note{margin:10px 0 0;color:var(--muted);font-size:12px}
+  @media (max-width:800px){
+    .controls{flex-direction:column;align-items:stretch}
+    .search{width:100%}
+    .search input{flex:1}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="dot"></div>
+      <div>
+        <h1>Racism isn’t a glitch — it’s a design that mutates</h1>
+        <div class="sub">Interactive mutation map • zoom, filter, receipts</div>
+      </div>
+    </div>
+    <div class="legend" aria-hidden="true">
+      <div class="box" style="background:#27c498"></div><span>Policy</span>
+      <div class="box" style="background:#ffb02e"></div><span>Policing</span>
+      <div class="box" style="background:#7ca6ff"></div><span>Medical</span>
+      <div class="box" style="background:#d17bff"></div><span>Surveillance</span>
+      <div class="box" style="background:#ffa2a2"></div><span>Economics</span>
+      <div class="box" style="background:#9ad97c"></div><span>Environment</span>
+      <div class="box" style="background:#a7c0ff"></div><span>Memory</span>
+    </div>
+  </header>
+
+  <div class="controls" role="region" aria-label="timeline controls">
+    <div class="filters" id="filters"></div>
+    <div class="search">
+      <input id="q" type="search" placeholder="Search (e.g., ‘sterilization’ or ‘COINTELPRO’)" aria-label="Search timeline items"/>
+      <button class="btn" id="clear">Clear</button>
+      <button class="btn hot" id="resetZoom">Reset Zoom</button>
+    </div>
+  </div>
+
+  <div class="canvas">
+    <svg id="viz" width="100%" height="560" role="img" aria-label="interactive timeline"></svg>
+    <div class="tip" id="tip" role="dialog" aria-live="polite"></div>
+  </div>
+
+  <p class="footer-note">Click a node to open receipts. Scroll or pinch to zoom & pan. Filter by tag chips above.</p>
+</div>
+
+<!-- Receipts Drawer -->
+<aside class="drawer" id="drawer" aria-hidden="true">
+  <header>
+    <div class="badge"><span>📄</span><strong id="dTitle">Item</strong></div>
+    <button class="btn" id="closeDrawer" style="margin-left:auto">Close</button>
+  </header>
+  <div class="body" id="dBody"></div>
+</aside>
+
+<!-- D3 v7 -->
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script>
+/** === Data ================================================================
+ Each item:
+  - id: unique
+  - label: short title
+  - start: numeric year (approx ok)
+  - end: numeric year or same as start
+  - tags: array of buckets (policy, policing, medical, surveillance, economics, environment, memory)
+  - detail: short description
+  - receipts: array of {title, url} — add your sources here
+*/
+const data = [
+  {id:"slavery", label:"Slavery & Breeding Plantations", start:1619, end:1865, tags:["economics","policy"],
+   detail:"Chattel slavery; family separation; coerced reproduction; wealth extraction.",
+   receipts:[
+     {title:"13th Amendment context (Library of Congress)", url:"https://www.loc.gov/exhibits/records-of-rights/slavery.html"},
+     {title:"Breeding & reproduction histories", url:"https://www.nps.gov/subjects/africanamericanheritage/slavery.htm"}
+   ]},
+  {id:"threefifths", label:"3/5 Compromise", start:1787, end:1865, tags:["policy","memory"],
+   detail:"Constitutional clause counting enslaved people as 3/5 for representation.",
+   receipts:[
+     {title:"National Constitution Center explainer", url:"https://constitutioncenter.org/interactive-constitution/clause/94"}
+   ]},
+  {id:"convict", label:"Convict Leasing", start:1865, end:1928, tags:["economics","policing","policy"],
+   detail:"Forced labor through criminalization; states leasing prisoners to private firms.",
+   receipts:[
+     {title:"Equal Justice Initiative report", url:"https://eji.org/report/convict-leasing/"}]},
+  {id:"jimcrow", label:"Jim Crow Segregation", start:1877, end:1965, tags:["policy","policing","memory"],
+   detail:"Segregation by law; disenfranchisement; racial terror and pogroms.",
+   receipts:[
+     {title:"Smithsonian overview", url:"https://nmaahc.si.edu/learn/talking-about-race/topics/being-antiracist"}]},
+  {id:"medical", label:"Medical Exploitation", start:1845, end:1979, tags:["medical","policy"],
+   detail:"J. Marion Sims’ surgeries on enslaved women; Tuskegee; forced sterilizations.",
+   receipts:[
+     {title:"CDC Tuskegee summary", url:"https://www.cdc.gov/tuskegee/index.html"},
+     {title:"NPR on forced sterilization", url:"https://www.npr.org/sections/health-shots/2022/07/13/1111156586/forced-sterilization-us-history"}]},
+  {id:"police", label:"Policing & Racial Violence", start:1870, end:2025, tags:["policing","policy"],
+   detail:"From slave patrols to modern brutality; disproportionate stops, force, killings.",
+   receipts:[
+     {title:"Mapping Police Violence", url:"https://mappingpoliceviolence.org/"}]},
+  {id:"cointelpro", label:"COINTELPRO", start:1956, end:1971, tags:["surveillance","policing","policy"],
+   detail:"FBI program to surveil/infiltrate Black liberation & civil rights groups.",
+   receipts:[
+     {title:"FBI Vault documents", url:"https://vault.fbi.gov/cointel-pro"}]},
+  {id:"urbanrenewal", label:"Urban Renewal/Highways", start:1950, end:1980, tags:["policy","economics","environment"],
+   detail:"‘Negro removal’: highways bulldozed through Black neighborhoods.",
+   receipts:[
+     {title:"Brookings: Highway removal & equity", url:"https://www.brookings.edu/articles/how-to-undo-highways-history-of-harm/"}]},
+  {id:"irancontra", label:"Iran-Contra / Crack Era", start:1981, end:1996, tags:["economics","policing","policy"],
+   detail:"Drug flows & sentencing disparities; crack vs powder cocaine penalties.",
+   receipts:[
+     {title:"ACLU on crack/powder disparity", url:"https://www.aclu.org/news/criminal-law-reform/it-is-time-to-end-the-crack-powder-cocaine-disparity"},
+     {title:"NIH: Crack epidemic history", url:"https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2851062/"}]},
+  {id:"prison", label:"Prison Industrial Pipeline", start:1970, end:2025, tags:["economics","policing","policy"],
+   detail:"Mass incarceration, mandatory minimums; private prisons profit.",
+   receipts:[
+     {title:"The Sentencing Project", url:"https://www.sentencingproject.org/"}]},
+  {id:"redline", label:"Redlining & Gerrymandering", start:1934, end:2025, tags:["policy","economics","memory"],
+   detail:"Denied mortgages; segregated districts; diluted voting power.",
+   receipts:[
+     {title:"HOLC maps & redlining", url:"https://dsl.richmond.edu/panorama/redlining/"},
+     {title:"Brennan Center on gerrymandering", url:"https://www.brennancenter.org/issues/ensure-every-american-can-vote/fair-maps-gerrymandering"}]},
+  {id:"environment", label:"Environmental Racism", start:1940, end:2025, tags:["environment","policy"],
+   detail:"Disproportionate siting of toxic industries; water crises like Flint.",
+   receipts:[
+     {title:"EPA environmental justice", url:"https://www.epa.gov/environmentaljustice"}]},
+  {id:"history", label:"History Suppression / Curriculum Wars", start:2010, end:2025, tags:["memory","policy"],
+   detail:"Anti-CRT bills; bans on ethnic studies; erasing resistance movements.",
+   receipts:[
+     {title:"PEN America on educational gag orders", url:"https://pen.org/issue/educational-gag-orders/"}]},
+  {id:"tignon", label:"Tignon & Aesthetic Control", start:1786, end:1800, tags:["policy","memory"],
+   detail:"Tignon laws policed Black women’s appearance to curb ‘jealousy’ and control.",
+   receipts:[
+     {title:"Historic New Orleans Collection", url:"https://www.hnoc.org/education/lesson-plans/tignon-laws"}]},
+];
+
+/** === Config ============================================================ */
+const TAGS = [
+  {key:"policy",      label:"Policy",      color:"#27c498"},
+  {key:"policing",    label:"Policing",    color:"#ffb02e"},
+  {key:"medical",     label:"Medical",     color:"#7ca6ff"},
+  {key:"surveillance",label:"Surveillance",color:"#d17bff"},
+  {key:"economics",   label:"Economics",   color:"#ffa2a2"},
+  {key:"environment", label:"Environment", color:"#9ad97c"},
+  {key:"memory",      label:"Memory",      color:"#a7c0ff"},
+];
+
+const width = Math.min(1400, document.querySelector("#viz").clientWidth);
+const height = 560;
+const margin = {top: 40, right: 28, bottom: 60, left: 28};
+
+const svg = d3.select("#viz")
+  .attr("viewBox", [0,0,width,height])
+  .attr("preserveAspectRatio", "xMidYMid meet");
+
+const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+const innerW = width - margin.left - margin.right;
+const innerH = height - margin.top - margin.bottom;
+
+const years = d3.extent([
+  ...data.map(d => d.start),
+  ...data.map(d => d.end ?? d.start)
+]);
+const x = d3.scaleLinear().domain([years[0]-10, years[1]+10]).range([0, innerW]);
+
+// vertical positions to spread rows
+const rows = 6;
+const y = d3.scaleBand().domain(d3.range(rows)).range([0, innerH]).paddingInner(0.25);
+
+// background axis
+g.append("line")
+ .attr("x1", 0).attr("x2", innerW)
+ .attr("y1", innerH/2).attr("y2", innerH/2)
+ .attr("stroke", "rgba(255,255,255,.06)").attr("stroke-width", 2);
+
+// axis with labels
+const axis = d3.axisBottom(x).ticks(10).tickFormat(d3.format("d"));
+const axisG = g.append("g").attr("transform", `translate(0,${innerH})`).attr("class","xaxis").call(axis);
+axisG.selectAll("text").attr("fill","#c9d6ff");
+axisG.selectAll("line").attr("stroke","#2b3b61");
+axisG.selectAll("path").attr("stroke","#2b3b61");
+
+// Tooltip
+const tip = d3.select("#tip");
+
+// color by primary tag (first tag)
+const color = (d)=> {
+  const key = d.tags?.[0] || "policy";
+  const found = TAGS.find(t=>t.key===key);
+  return found ? found.color : "#27c498";
+};
+
+// layout: assign row to reduce overlaps
+data.sort((a,b)=> (a.start - b.start) || (a.end - b.end));
+let curRow = 0;
+const laid = data.map(d=>{
+  const r = curRow; curRow = (curRow + 1) % rows;
+  return {...d, row:r};
+});
+
+// draw links (ranges)
+const groups = g.append("g").attr("class","ranges");
+groups.selectAll("line.range")
+  .data(laid)
+  .join("line")
+  .attr("class","range")
+  .attr("x1", d=>x(d.start))
+  .attr("x2", d=>x(d.end ?? d.start))
+  .attr("y1", d=>y(d.row)+y.bandwidth()/2)
+  .attr("y2", d=>y(d.row)+y.bandwidth()/2)
+  .attr("stroke", d=>color(d))
+  .attr("stroke-width", 4)
+  .attr("stroke-linecap","round")
+  .attr("opacity", .6);
+
+// nodes
+const nodes = g.append("g").attr("class","nodes")
+  .selectAll("g.node")
+  .data(laid)
+  .join("g")
+  .attr("class","node")
+  .attr("transform", d=>`translate(${x((d.start + (d.end ?? d.start))/2)}, ${y(d.row)+y.bandwidth()/2})`)
+  .style("cursor","pointer")
+  .on("mouseenter", (ev,d)=>{
+    tip.style("opacity",1)
+       .style("left", (ev.offsetX + 18) + "px")
+       .style("top",  (ev.offsetY - 12) + "px")
+       .html(`
+        <h3>${d.label}</h3>
+        <p>${d.start}${d.end && d.end!==d.start ? "–"+d.end : ""}</p>
+        <p>${d.detail}</p>
+        <span class="tag">#${d.tags.join(" #")}</span>
+       `);
+  })
+  .on("mousemove", (ev)=>{
+    tip.style("left", (ev.offsetX + 18) + "px").style("top",  (ev.offsetY - 12) + "px");
+  })
+  .on("mouseleave", ()=> tip.style("opacity",0))
+  .on("click", (_,d)=> openDrawer(d));
+
+nodes.append("circle")
+  .attr("r", 10)
+  .attr("fill", d=>color(d))
+  .attr("stroke", "#07101f")
+  .attr("stroke-width", 2)
+  .attr("filter","url(#glow)");
+
+nodes.append("text")
+  .text(d=>d.label)
+  .attr("x", 14)
+  .attr("dy", "0.35em")
+  .attr("fill", "#dfe8ff")
+  .attr("font-size", 12)
+  .attr("font-weight", 700);
+
+// defs: subtle glow
+const defs = svg.append("defs");
+const filter = defs.append("filter").attr("id","glow");
+filter.append("feGaussianBlur").attr("stdDeviation","1.6").attr("result","coloredBlur");
+const feMerge = filter.append("feMerge");
+feMerge.append("feMergeNode").attr("in","coloredBlur");
+feMerge.append("feMergeNode").attr("in","SourceGraphic");
+
+// drawer logic
+const drawer = document.getElementById("drawer");
+const dTitle = document.getElementById("dTitle");
+const dBody = document.getElementById("dBody");
+document.getElementById("closeDrawer").onclick = ()=> closeDrawer();
+
+function openDrawer(d){
+  dTitle.textContent = d.label;
+  const range = d.end && d.end!==d.start ? `${d.start}–${d.end}` : `${d.start}`;
+  const recs = (d.receipts||[]).map(r=> `<li><a href="${r.url}" target="_blank" rel="noopener">${r.title}</a></li>`).join("") || "<li class='soft'>No receipts added yet.</li>";
+  dBody.innerHTML = `
+    <div class="kv">
+      <div><span class="h">Years</span><div class="v">${range}</div></div>
+      <div><span class="h">Tags</span><div class="v">#${d.tags.join(" #")}</div></div>
+      <div><span class="h">Summary</span><div class="v">${d.detail}</div></div>
+      <div><span class="h">Receipts</span><ul>${recs}</ul></div>
+      <div class="soft">Tip: add more receipts in the data array inside the HTML file.</div>
+    </div>
+  `;
+  drawer.classList.add("open");
+  drawer.setAttribute("aria-hidden","false");
+}
+function closeDrawer(){
+  drawer.classList.remove("open");
+  drawer.setAttribute("aria-hidden","true");
+}
+
+// filters
+const filtersEl = document.getElementById("filters");
+let activeTags = new Set(); // empty = all
+TAGS.forEach(t=>{
+  const el = document.createElement("button");
+  el.className = "chip";
+  el.textContent = t.label;
+  el.setAttribute("data-key", t.key);
+  el.onclick = ()=>{
+    if(activeTags.has(t.key)){ activeTags.delete(t.key); el.classList.remove("active"); }
+    else { activeTags.add(t.key); el.classList.add("active"); }
+    applyFilters();
+  };
+  filtersEl.appendChild(el);
+});
+function applyFilters(){
+  const query = (document.getElementById("q").value || "").toLowerCase().trim();
+  const predicate = (d)=>{
+    const tagOK = activeTags.size===0 || d.tags.some(t=>activeTags.has(t));
+    const qOK = !query || [d.label, d.detail, d.tags.join(" ")].join(" ").toLowerCase().includes(query);
+    return tagOK && qOK;
+  };
+  g.selectAll("line.range").attr("opacity", d=> predicate(d) ? .6 : .06);
+  g.selectAll("g.node").attr("opacity", d=> predicate(d) ? 1 : .12)
+                       .attr("pointer-events", d=> predicate(d) ? "auto" : "none");
+}
+document.getElementById("q").addEventListener("input", applyFilters);
+document.getElementById("clear").addEventListener("click", ()=>{
+  document.getElementById("q").value=""; activeTags.clear();
+  document.querySelectorAll(".chip.active").forEach(c=>c.classList.remove("active"));
+  applyFilters();
+});
+
+// zoom/pan
+const zoom = d3.zoom()
+  .scaleExtent([0.7, 6])
+  .translateExtent([[0,0],[width, height]])
+  .on("zoom", (ev)=>{
+    const t = ev.transform;
+    g.attr("transform", `translate(${t.x+margin.left},${t.y+margin.top}) scale(${t.k})`);
+  });
+
+svg.call(zoom);
+document.getElementById("resetZoom").onclick = ()=> svg.transition().duration(350).call(zoom.transform, d3.zoomIdentity);
+
+// keyboard: ESC closes drawer
+document.addEventListener("keydown", (e)=>{ if(e.key==="Escape") closeDrawer(); });
+
+// initial render
+applyFilters();
+</script>
+</body>
+</html>
